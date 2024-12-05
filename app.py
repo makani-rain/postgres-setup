@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, conlist
 import psycopg2
 from typing import List, Generator, Optional
@@ -145,24 +145,29 @@ def get_title_name(title_id: str, cursor = Depends(get_cursor)):
 ####################################
 
 
+# Serve HTML Icon
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("web/favicon.ico")
+
 # Serve HTML Home Page
 @app.get("/", response_class=HTMLResponse)
 def get_consumer_management():
-    with open("html/index.html", "r") as file:
+    with open("web/index.html", "r") as file:
         html_content = file.read()
     return HTMLResponse(content=html_content)
 
 # Serve HTML Consumer Page
 @app.get("/consumer", response_class=HTMLResponse)
 def get_consumer_management():
-    with open("html/consumer.html", "r") as file:
+    with open("web/consumer.html", "r") as file:
         html_content = file.read()
     return HTMLResponse(content=html_content)
 
 # Serve HTML Watchlist Page
 @app.get("/watchlist", response_class=HTMLResponse)
 def get_consumer_management():
-    with open("html/watchlist.html", "r") as file:
+    with open("web/watchlist.html", "r") as file:
         html_content = file.read()
     return HTMLResponse(content=html_content)
 
