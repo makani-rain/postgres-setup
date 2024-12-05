@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streaming Services</title>
+    <!-- Material Design Lite CSS -->
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+    <!-- Material Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <style>
+        body {
+            font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0 10%;
+            box-sizing: border-box;
+        }
+        #main {
+            width: 100%;
+            max-width: 1200px;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+        }
+        #streamingServiceForm {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            cursor: pointer;
+        }
+        th input[type="checkbox"], td input[type="checkbox"] {
+            margin: 0;
+            padding: 0;
+            width: 1.5em;
+            height: 1.5em;
+        }
+        .deleteIcon {
+            cursor: pointer;
+            color: red;
+        }
+        .delete-button {
+            margin-top: 10px;
+            background-color: #ffcdd2;
+            color: #d32f2f;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            align-self: flex-end;
+        }
+        .delete-button:hover {
+            background-color: #ef9a9a;
+        }
+        .selected {
+            background-color: #e0f7fa;
+        }
+        .view-watchlist-button {
+            color: #2196F3;
+            border: none;
+            background: none;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" onclick="returnToHomePage()">Home</button>
+    <div class="container">
+        <div id="main" class="mdl-card mdl-shadow--2dp">
+            <h1 class="mdl-card__title-text">Streaming Services</h1>
+            <form id="streamingServiceForm" class="mdl-grid">
+                <div class="mdl-cell mdl-cell--4-col">
+                    <div class="mdl-textfield mdl-js-textfield">
+                        <input class="mdl-textfield__input" type="text" id="name" name="name" required>
+                        <label class="mdl-textfield__label" for="name">Name</label>
+                    </div>
+                </div>
+                <div class="mdl-cell mdl-cell--12-col" style="display: flex; justify-content: flex-end;">
+                    <button type="submit" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored">
+                        Add Streaming Service
+                    </button>
+                </div>
+            </form>
+            <table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
+                <thead>
+                    <tr>
+                        <th style="width: 1.5em;"><input type="checkbox" id="selectAll" onclick="selectAllCheckbox(this)"></th>
+                        <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1)">ID</th>
+                        <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(2)">Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="streamingServiceList">
+                </tbody>
+            </table>
+            <button class="delete-button" onclick="deleteSelected()">
+                Delete Selected
+            </button>
+        </div>
+    </div>
+
+    <!-- Material Design Lite JavaScript -->
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <script>
+        async function fetchStreamingServices() {
+            const response = await fetch('http://localhost:8000/streamingservices/');
+            const streamingServices = await response.json();
+            const streamingServiceList = document.getElementById('streamingServiceList');
+            streamingServiceList.innerHTML = '';
+            streamingServices.forEach(streamingService => {
+                const row = document.createElement('tr');
+                row.classList.add('streaming-service-row');
+                row.innerHTML = `
+                    <td style="width: 1.5em;"><input type="checkbox" class="streaming-service-checkbox" value="${streamingService.service_id}"></td>
+                    <td class="mdl-data-table__cell--non-numeric">${streamingService.service_id}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${streamingService.name}</td>
+                    <td><button class="view-watchlist-button" onclick="viewPackages('${streamingService.service_id}')">View Packages</button></td>
+                `;
+                row.addEventListener('click', function(event) {
+                    if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'BUTTON') {
+                        const checkbox = this.querySelector('.streaming-service-checkbox');
+                        checkbox.checked = !checkbox.checked;
+                        this.classList.toggle('selected', checkbox.checked);
+                    }
+                });
+                streamingServiceList.appendChild(row);
+            });
+        }
+
+        function returnToHomePage() {
+            window.location.href = `/`;
+        }
+
+        function viewPackages(serviceId) {
+            window.location.href = `packages/${serviceId}`;
+        }
+
+        async function deleteSelected() {
+            const selected = Array.from(document.querySelectorAll('.streaming-service-checkbox:checked')).map(checkbox => checkbox.value);
+            if (selected.length > 0) {
+                await fetch('http://localhost:8000/streamingservices/', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ service_ids: selected })
+                });
+                fetchStreamingServices();
+            }
+        }
+
+        function selectAllCheckbox(selectAll) {
+            const checkboxes = document.querySelectorAll('.streaming-service-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+                checkbox.closest('tr').classList.toggle('selected', selectAll.checked);
+            });
+        }
+
+        document.getElementById('streamingServiceForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const name = document.getElementById('name').value;
+
+            const response = await fetch('http://localhost:8000/streamingservices/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name }),
+            });
+
+            if (response.ok) {
+                fetchStreamingServices();
+            }
+        });
+
+        function sortTable(n) {
+            const table = document.querySelector("table tbody");
+            const rows = Array.from(table.rows);
+            let sortedRows = rows.sort((a, b) => {
+                const cellA = a.cells[n].innerText.toLowerCase();
+                const cellB = b.cells[n].innerText.toLowerCase();
+
+                if (!isNaN(parseFloat(cellA)) && !isNaN(parseFloat(cellB))) {
+                    return parseFloat(cellA) - parseFloat(cellB);
+                }
+
+                return cellA.localeCompare(cellB);
+            });
+
+            table.innerHTML = "";
+            sortedRows.forEach(row => table.appendChild(row));
+        }
+
+        fetchStreamingServices();
+    </script>
+</body>
+</html>
