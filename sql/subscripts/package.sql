@@ -1,7 +1,7 @@
 \echo -- Creating table: package
 CREATE TABLE package (
-  package_id varchar(32) primary key,
-  service_id varchar(32) references streaming_service(service_id),
+  package_id UUID default gen_random_uuid() primary key,
+  service_id UUID references streaming_service(service_id),
   price decimal(6, 2),
   period text,
   ad_supported boolean,
