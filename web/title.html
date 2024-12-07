@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Titles</title>
+    <!-- Material Design Lite CSS -->
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+    <!-- Material Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <style>
+        body {
+            font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0 10%;
+            box-sizing: border-box;
+        }
+        #main {
+            width: 100%;
+            max-width: 1200px;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        #titles {
+            flex: 1;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        #titleForm {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            cursor: pointer;
+        }
+        th input[type="checkbox"], td input[type="checkbox"] {
+            margin: 0;
+            padding: 0;
+            width: 1.5em;
+            height: 1.5em;
+        }
+        .deleteIcon {
+            cursor: pointer;
+            color: red;
+        }
+        .delete-button {
+            margin-top: 10px;
+            background-color: #ffcdd2;
+            color: #d32f2f;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            align-self: flex-end;
+        }
+        .delete-button:hover {
+            background-color: #ef9a9a;
+        }
+        .selected {
+            background-color: #e0f7fa;
+        }
+    </style>
+</head>
+<body>
+    <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" onclick="returnToHomePage()">Home</button>
+    <div class="container">
+        <div id="main" class="mdl-card mdl-shadow--2dp">
+            <h1 class="mdl-card__title-text">Available Titles</h1>
+            <form id="titleForm" class="mdl-grid">
+                <div class="mdl-cell mdl-cell--4-col">
+                    <div class="mdl-textfield mdl-js-textfield">
+                        <input class="mdl-textfield__input" type="text" id="title_name" name="title_name" required>
+                        <label class="mdl-textfield__label" for="title_name">Title Name</label>
+                    </div>
+                </div>
+                <div class="mdl-cell mdl-cell--4-col">
+                    <div class="mdl-textfield mdl-js-textfield">
+                        <input class="mdl-textfield__input" type="text" id="director" name="director" required>
+                        <label class="mdl-textfield__label" for="director">Director</label>
+                    </div>
+                </div>
+                <div class="mdl-cell mdl-cell--4-col">
+                    <div class="mdl-textfield mdl-js-textfield">
+                        <input class="mdl-textfield__input" type="text" id="release_date" name="release_date" required>
+                        <label class="mdl-textfield__label" for="release_date">Release Date</label>
+                    </div>
+                </div>
+                <div class="mdl-cell mdl-cell--12-col" style="display: flex; justify-content: flex-end;">
+                    <button type="submit" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored">
+                        Add Title
+                    </button>
+                </div>
+            </form>
+            <div id="titles">
+                <table id="titlesTable" class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
+                    <thead>
+                        <tr>
+                            <th style="width: 1.5em;"><input type="checkbox" id="selectAll" onclick="selectAllCheckbox(this)"></th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1, 'titlesTable')">Title</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(2, 'titlesTable')">Director</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(3, 'titlesTable')">Release Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="titlesList">
+                    </tbody>
+                </table>
+            </div>
+            <button class="delete-button" onclick="deleteSelectedTitles()">
+                Delete Selected
+            </button>
+        </div>
+    </div>
+
+    <!-- Material Design Lite JavaScript -->
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <script>
+        function returnToHomePage() {
+            window.location.href = `/`;
+        }
+
+        async function fetchTitles() {
+            const response = await fetch('http://localhost:8000/titles/');
+            const titles = await response.json();
+            const titlesList = document.getElementById('titlesList');
+            titlesList.innerHTML = '';
+            titles.forEach(title => {
+                const row = document.createElement('tr');
+                row.classList.add('title-row');
+                row.innerHTML = `
+                    <td style="width: 1.5em;"><input type="checkbox" class="title-checkbox" value="${title.title_id}"></td>
+                    <td class="mdl-data-table__cell--non-numeric">${title.title_name}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${title.director}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${title.release_date}</td>
+                `;
+                row.addEventListener('click', function(event) {
+                    if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'BUTTON') {
+                        const checkbox = this.querySelector('.title-checkbox');
+                        checkbox.checked = !checkbox.checked;
+                        this.classList.toggle('selected', checkbox.checked);
+                    }
+                });
+                titlesList.appendChild(row);
+            });
+        }
+
+        async function addTitle(event) {
+            event.preventDefault();
+            const title_name = document.getElementById('title_name').value;
+            const director = document.getElementById('director').value;
+            const release_date = document.getElementById('release_date').value;
+
+            const response = await fetch('http://localhost:8000/titles/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ title_name, director, release_date }),
+            });
+
+            if (response.ok) {
+                fetchTitles();
+            }
+        }
+
+        async function deleteSelectedTitles() {
+            const selected = Array.from(document.querySelectorAll('.title-checkbox:checked')).map(checkbox => checkbox.value);
+            if (selected.length > 0) {
+                await fetch('http://localhost:8000/titles/', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ title_ids: selected })
+                });
+                fetchTitles();
+            }
+        }
+
+        function selectAllCheckbox(selectAll) {
+            const checkboxes = document.querySelectorAll('.title-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+                checkbox.closest('tr').classList.toggle('selected', selectAll.checked);
+            });
+        }
+
+        function sortTable(n, tableId) {
+            const table = document.getElementById(tableId).querySelector("tbody");
+            const rows = Array.from(table.rows);
+            let sortedRows = rows.sort((a, b) => {
+                const cellA = a.cells[n].innerText.toLowerCase();
+                const cellB = b.cells[n].innerText.toLowerCase();
+
+                if (!isNaN(parseFloat(cellA)) && !isNaN(parseFloat(cellB))) {
+                    return parseFloat(cellA) - parseFloat(cellB);
+                }
+
+                return cellA.localeCompare(cellB);
+            });
+
+            table.innerHTML = "";
+            sortedRows.forEach(row => table.appendChild(row));
+        }
+
+        document.getElementById('titleForm').addEventListener('submit', addTitle);
+        
+        fetchTitles();
+    </script>
+</body>
+</html>

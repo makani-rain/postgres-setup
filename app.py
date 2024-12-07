@@ -270,6 +270,13 @@ def get_watchlist_management():
         html_content = file.read()
     return HTMLResponse(content=html_content)
 
+# Serve HTML Title Page
+@app.get("/title", response_class=HTMLResponse)
+def get_title_management():
+    with open("web/title.html", "r") as file:
+        html_content = file.read()
+    return HTMLResponse(content=html_content)
+
 # Run the FastAPI server
 if __name__ == "__main__":
     import uvicorn
