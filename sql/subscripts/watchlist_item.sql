@@ -2,6 +2,5 @@
 CREATE TABLE watchlist_item (
   watchlist_item_id UUID default gen_random_uuid() primary key,
   watchlist_id UUID references watchlist(watchlist_id),
-  title_id UUID references title(title_id),
-  priority int
+  title_id UUID references title(title_id)
 );

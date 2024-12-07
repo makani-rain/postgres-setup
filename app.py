@@ -48,7 +48,6 @@ class ConsumersToDelete(BaseModel):
 
 class WatchlistItemCreate(BaseModel):
     title_id: str
-    priority: int
 
 class WatchlistItem(WatchlistItemCreate):
     watchlist_item_id: str
@@ -59,7 +58,7 @@ class WatchlistItemsToDelete(BaseModel):
 
 class Title(BaseModel):
     title_id: str
-    name: str
+    title_name: str
     type: Optional[str] = None
     rating: Optional[str] = None
     release_date: Optional[str] = None
@@ -175,15 +174,15 @@ def delete_consumers(consumers_to_delete: ConsumersToDelete, cursor = Depends(ge
 @app.get("/watchlists/{consumer_id}", response_model=List[WatchlistItem])
 def read_watchlist(consumer_id: str, cursor = Depends(get_cursor)):
     cursor.execute("""
-        SELECT wi.watchlist_item_id, wi.watchlist_id, wi.title_id, wi.priority
+        SELECT wi.watchlist_item_id, wi.watchlist_id, wi.title_id
         FROM watchlist_item wi
         JOIN watchlist w ON wi.watchlist_id = w.watchlist_id
         WHERE w.consumer_id = %s
     """, (consumer_id,))
     watchlist_items = cursor.fetchall()
     return [
-        {"watchlist_item_id": wi_id, "watchlist_id": w_id, "title_id": title_id, "priority": priority}
-        for wi_id, w_id, title_id, priority in watchlist_items
+        {"watchlist_item_id": wi_id, "watchlist_id": w_id, "title_id": title_id}
+        for wi_id, w_id, title_id in watchlist_items
     ]
 
 # Add Watchlist Item Endpoint
@@ -198,10 +197,10 @@ def create_watchlist_item(consumer_id: str, item: WatchlistItemCreate, cursor = 
         watchlist_id = watchlist[0]
     
     cursor.execute("""
-        INSERT INTO watchlist_item (watchlist_id, title_id, priority) 
-        VALUES (%s, %s, %s) 
+        INSERT INTO watchlist_item (watchlist_id, title_id) 
+        VALUES (%s, %s) 
         RETURNING watchlist_item_id
-    """, (watchlist_id, item.title_id, item.priority))
+    """, (watchlist_id, item.title_id))
     watchlist_item_id = cursor.fetchone()[0]
     return {"watchlist_item_id": watchlist_item_id, "watchlist_id": watchlist_id, **item.model_dump()}
 
@@ -219,13 +218,13 @@ def delete_watchlist_items(items_to_delete: WatchlistItemsToDelete, cursor = Dep
 # Get Titles Endpoint
 @app.get("/titles/", response_model=List[Title])
 def read_titles(skip: int = 0, limit: int = 50, cursor = Depends(get_cursor)):
-    cursor.execute("SELECT title_id, name, type, rating, release_date, genre, category, director FROM title OFFSET %s LIMIT %s", (skip, limit))
+    cursor.execute("SELECT title_id, title_name, type, rating, release_date, category, director FROM title OFFSET %s LIMIT %s", (skip, limit))
     titles = cursor.fetchall()
-    return [{"title_id": title_id, "name": name, "type": type, "rating": rating, "release_date": release_date, "genre": genre, "category": category, "director": director} for title_id, name, type, rating, release_date, genre, category, director in titles]
+    return [{"title_id": title_id, "title_name": title_name, "type": type, "rating": rating, "release_date": release_date, "category": category, "director": director} for title_id, title_name, type, rating, release_date, category, director in titles]
 
 # Get Title Details
 @app.get("/titles/{title_id}", response_model=Title)
-def get_title_name(title_id: str, cursor = Depends(get_cursor)):
+def get_title_details(title_id: str, cursor = Depends(get_cursor)):
     cursor.execute("""
         SELECT *
         FROM title
