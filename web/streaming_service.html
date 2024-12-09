@@ -34,6 +34,7 @@
             border-radius: 5px;
             display: flex;
             flex-direction: column;
+            overflow-y: auto;
         }
         #streamingServiceForm {
             margin-bottom: 20px;
@@ -111,7 +112,8 @@
                         <th style="width: 1.5em;"><input type="checkbox" id="selectAll" onclick="selectAllCheckbox(this)"></th>
                         <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1)">ID</th>
                         <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(2)">Name</th>
-                        <th>Actions</th>
+                        <th>Titles</th>
+                        <th>Packages</th>
                     </tr>
                 </thead>
                 <tbody id="streamingServiceList">
@@ -138,7 +140,8 @@
                     <td style="width: 1.5em;"><input type="checkbox" class="streaming-service-checkbox" value="${streamingService.service_id}"></td>
                     <td class="mdl-data-table__cell--non-numeric">${streamingService.service_id}</td>
                     <td class="mdl-data-table__cell--non-numeric">${streamingService.name}</td>
-                    <td><button class="view-watchlist-button" onclick="viewPackages('${streamingService.service_id}')">View Packages</button></td>
+                    <td><button class="view-watchlist-button" onclick="viewStreams('${streamingService.service_id}', '${streamingService.name}')">View/Edit Streaming Titles</button></td>
+                    <td><button class="view-watchlist-button" onclick="viewPackages('${streamingService.service_id}', '${streamingService.name}')">View/Edit Packages</button></td>
                 `;
                 row.addEventListener('click', function(event) {
                     if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'BUTTON') {
@@ -155,8 +158,12 @@
             window.location.href = `/`;
         }
 
-        function viewPackages(serviceId) {
-            window.location.href = `packages/${serviceId}`;
+        function viewStreams(serviceId, serviceName) {
+            window.location.href = `stream?serviceId=${serviceId}&serviceName=${serviceName}`;
+        }
+
+        function viewPackages(serviceId, serviceName) {
+            window.location.href = `package?serviceId=${serviceId}&serviceName=${serviceName}`;
         }
 
         async function deleteSelected() {

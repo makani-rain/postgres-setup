@@ -16,7 +16,7 @@ def clean_str(in_str) -> str:
         return None
     return in_str.strip().replace("'", "''")
 
-def store_data_in_db(service_name, data):
+def store_data_in_db(data):
     cursor = conn.cursor()
     title_ids = []
     for title_details in data:
@@ -25,17 +25,17 @@ def store_data_in_db(service_name, data):
         # rating = clean_str(title_details['rating'])
         titlereleased = clean_str(str(title_details['releaseYear']) if 'releaseYear' in title_details else f"{title_details['firstAirYear']}-{title_details['lastAirYear']}")
         category = clean_str(', '.join([x['id'] for x in title_details['genres']]))
-        director = clean_str(', '.join(title_details['creators'])) if 'creators' in title_details else ''
+        creator = clean_str(', '.join(title_details['creators'])) if 'creators' in title_details else (', '.join(title_details['directors']) if 'directors' in title_details else '')
         # language = clean_str(title_details['language'])
 
         cursor.execute('''
-INSERT INTO title (title_name, type, release_date, category, director) 
+INSERT INTO title (title_name, type, release_date, category, creator) 
     VALUES (%s, %s, %s, %s, %s) RETURNING title_id
-''', (title, type, titlereleased, category, director))
+''', (title, type, titlereleased, category, creator))
         title_id = cursor.fetchone()[0]
         
         services_streaming_title = []
-        streaming_opts = title_details['streamingOptions']['us']
+        streaming_opts = title_details['streamingOptions']['us'] if 'us' in title_details['streamingOptions'] else []
         for streaming_opt in streaming_opts:
             if streaming_opt['type'] == 'subscription':
                 opt_service_name = streaming_opt['service']['id']
@@ -50,7 +50,6 @@ INSERT INTO title (title_name, type, release_date, category, director)
 
     for title_id in title_ids:
         if title_id[1] != []:
-            print(f'title_id={title_id}')
             for svc in title_id[1]:
                 svc_name = svc[0]
                 cursor.execute('''
@@ -134,4 +133,10 @@ if __name__=='__main__':
         with open(f'datascrapes/top{service}.json', 'r', encoding='utf-8') as file:
             data = json.load(file)
 
-        store_data_in_db(service, data)
+        store_data_in_db(data)
+    
+    # manually store the large file
+    with open(f'datascrapes/netflixdata.json', 'r', encoding='utf-8') as file:
+        data = json.load(file)
+
+    store_data_in_db(data)

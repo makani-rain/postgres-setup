@@ -27,7 +27,7 @@
         }
         #main {
             width: 100%;
-            max-width: 1200px;
+            max-width: 90%;
             background: #fff;
             padding: 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
@@ -125,7 +125,8 @@
                         <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(2)">Name</th>
                         <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(3)">Address</th>
                         <th onclick="sortTable(4)">Budget</th>
-                        <th>Actions</th>
+                        <th>Watchlists</th>
+                        <th>Subscriptions</th>
                     </tr>
                 </thead>
                 <tbody id="consumerList">
@@ -154,7 +155,8 @@
                     <td class="mdl-data-table__cell--non-numeric">${consumer.name}</td>
                     <td class="mdl-data-table__cell--non-numeric">${consumer.address}</td>
                     <td>${consumer.budget}</td>
-                    <td><button class="view-watchlist-button" onclick="viewWatchlist('${consumer.consumer_id}')">View Watchlist</button></td>
+                    <td><button class="view-watchlist-button" onclick="viewWatchlist('${consumer.consumer_id}', '${consumer.name}')">View/Edit Watchlist</button></td>
+                    <td><button class="view-watchlist-button" onclick="viewSubscriptions('${consumer.consumer_id}', '${consumer.name}')">View/Edit Subscriptions</button></td>
                 `;
                 row.addEventListener('click', function(event) {
                     if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'BUTTON') {
@@ -171,8 +173,12 @@
             window.location.href = `/`;
         }
 
-        function viewWatchlist(consumerId) {
-            window.location.href = `watchlist?consumer_id=${consumerId}`;
+        function viewWatchlist(consumerId, consumerName) {
+            window.location.href = `watchlist?consumer_id=${consumerId}&consumer_name=${consumerName}`;
+        }
+
+        function viewSubscriptions(consumerId, consumerName) {
+            window.location.href = `subscribe?consumer_id=${consumerId}&consumer_name=${consumerName}`;
         }
 
         async function deleteSelected() {

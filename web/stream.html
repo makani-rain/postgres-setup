@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watchlist</title>
+    <title>Streams</title>
     <!-- Material Design Lite CSS -->
     <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
     <!-- Material Icons -->
@@ -36,14 +36,12 @@
             flex-direction: row;
             gap: 20px;
         }
-        #titles, #watchlist {
+        #titles, #streams {
             flex: 1;
-        }
-        #titles {
             max-height: 600px;
             overflow-y: auto;
         }
-        #titleForm, #watchlistForm {
+        #titleForm, #streamsForm {
             margin-bottom: 20px;
             display: flex;
             justify-content: flex-end;
@@ -105,18 +103,18 @@
                     </tbody>
                 </table>
             </div>
-            <div id="watchlist">
-                <h1 class="mdl-card__title-text" id="dynamicTitle">Watchlist</h1>
-                <form id="watchlistForm" class="mdl-grid">
+            <div id="streams">
+                <h1 class="mdl-card__title-text" id="dynamicTitle">Streaming Titles</h1>
+                <form id="streamsForm" class="mdl-grid">
                 </form>
-                <table id="watchlistTable" class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
+                <table id="streamsTable" class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
                     <thead>
                         <tr>
                             <th style="width: 1.5em;"><input type="checkbox" id="selectAll" onclick="selectAllCheckbox(this)"></th>
-                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1, 'watchlistTable')">Title</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1, 'streamsTable')">Title</th>
                         </tr>
                     </thead>
-                    <tbody id="watchlistList">
+                    <tbody id="streamsList">
                     </tbody>
                 </table>
                 <button class="delete-button" onclick="deleteSelected()">
@@ -133,15 +131,15 @@
             window.location.href = `/`;
         }
 
-        // Function to get the consumer_id from the query parameters
-        function getConsumerIdFromUrl() {
+        // Function to get the streamingservice_id from the query parameters
+        function getStreamingServiceIdFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('consumer_id');
+            return urlParams.get('serviceId');
         }
         
-        function getConsumerNameFromUrl() {
+        function getStreamingServiceNameFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('consumer_name');
+            return urlParams.get('serviceName');
         }
 
         async function fetchTitles() {
@@ -154,78 +152,78 @@
                 row.classList.add('title-row');
                 row.innerHTML = `
                     <td class="mdl-data-table__cell--non-numeric">${title.title_name}</td>
-                    <td><button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" onclick="addTitleToWatchlist('${title.title_id}')">Add</button></td>
+                    <td><button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" onclick="addTitleToStreams('${title.title_id}')">Add</button></td>
                 `;
                 titlesList.appendChild(row);
             });
             return titles;
         }
 
-        async function fetchWatchlist() {
-            const consumer_id = getConsumerIdFromUrl();
-            const response = await fetch(`http://localhost:8000/watchlists/${consumer_id}`);
-            const watchlist = await response.json();
-            const watchlistList = document.getElementById('watchlistList');
-            watchlistList.innerHTML = '';
+        async function fetchStreams() {
+            const streamingservice_id = getStreamingServiceIdFromUrl();
+            const response = await fetch(`http://localhost:8000/streams/${streamingservice_id}`);
+            const streams = await response.json();
+            const streamsList = document.getElementById('streamsList');
+            streamsList.innerHTML = '';
 
             const titles = await fetchTitles();
 
-            watchlist.forEach(item => {
+            streams.forEach(item => {
                 let title_name = titles.find(title => title.title_id === item.title_id).title_name;
 
                 const row = document.createElement('tr');
-                row.classList.add('watchlist-row');
+                row.classList.add('streams-row');
                 row.innerHTML = `
-                    <td style="width: 1.5em;"><input type="checkbox" class="watchlist-checkbox" value="${item.watchlist_item_id}"></td>
+                    <td style="width: 1.5em;"><input type="checkbox" class="streams-checkbox" value='{"service_id":"${item.service_id}", "title_id":"${item.title_id}"}'></td>
                     <td class="mdl-data-table__cell--non-numeric">${title_name}</td>
                 `;
                 row.addEventListener('click', function(event) {
                     if (event.target.tagName !== 'INPUT') {
-                        const checkbox = this.querySelector('.watchlist-checkbox');
+                        const checkbox = this.querySelector('.streams-checkbox');
                         checkbox.checked = !checkbox.checked;
                         this.classList.toggle('selected', checkbox.checked);
                     }
                 });
-                watchlistList.appendChild(row);
+                streamsList.appendChild(row);
             });
         }
 
-        async function addTitleToWatchlist(titleId) {
-            const consumerId = getConsumerIdFromUrl();
-
-            await fetch(`http://localhost:8000/watchlists/${consumerId}/items`, {
+        async function addTitleToStreams(title_id) {
+            const service_id = getStreamingServiceIdFromUrl();
+            await fetch(`http://localhost:8000/streams/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ title_id: titleId })
+                body: JSON.stringify({ service_id, title_id })
             });
-            fetchWatchlist();
+            fetchStreams();
         }
 
         async function deleteSelected() {
-            const selected = Array.from(document.querySelectorAll('.watchlist-checkbox:checked')).map(checkbox => checkbox.value);
+            const selected = Array.from(document.querySelectorAll('.streams-checkbox:checked')).map(checkbox => checkbox.value);
+            
             if (selected.length > 0) {
-                await fetch(`http://localhost:8000/watchlist_items/`, {
+                await fetch(`http://localhost:8000/streams/`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ watchlist_item_ids: selected })
+                    body: JSON.stringify(selected.map(value => JSON.parse(value)))
                 });
-                fetchWatchlist();
+                fetchStreams();
             }
         }
 
         function selectAllCheckbox(selectAll) {
-            const checkboxes = document.querySelectorAll('.watchlist-checkbox');
+            const checkboxes = document.querySelectorAll('.streams-checkbox');
             checkboxes.forEach(checkbox => {
                 checkbox.checked = selectAll.checked;
                 checkbox.closest('tr').classList.toggle('selected', selectAll.checked);
             });
         }
 
-        document.getElementById('watchlistForm').addEventListener('submit', async (event) => {
+        document.getElementById('streamsForm').addEventListener('submit', async (event) => {
             event.preventDefault();
         });
 
@@ -247,11 +245,11 @@
             sortedRows.forEach(row => table.appendChild(row));
         }
 
-        if (getConsumerNameFromUrl() != undefined) {
-            document.getElementById('dynamicTitle').innerText = 'Watchlist for ' + getConsumerNameFromUrl();
+        if (getStreamingServiceNameFromUrl() != undefined) {
+            document.getElementById('dynamicTitle').innerText = 'Streaming Titles for ' + getStreamingServiceNameFromUrl();
         }
         fetchTitles();
-        fetchWatchlist();
+        fetchStreams();
     </script>
 </body>
 </html>

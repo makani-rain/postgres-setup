@@ -13,16 +13,16 @@ def clean_str(in_str) -> str:
 def write_data_to_file(data):
     with open('canned_netflix_titles.sql', 'w', encoding='utf-8') as file:
         file.write('\echo Populating Netflix data\n')
-        file.write('INSERT INTO title (title_name, type, rating, release_date, category, director, language)\n\tVALUES')
+        file.write('INSERT INTO title (title_name, type, rating, release_date, category, creator, language)\n\tVALUES')
         for index, title_details in enumerate(data):
             title = clean_str(title_details['title'])
             type = clean_str(title_details['type'])
             rating = clean_str(title_details['rating'])
             titlereleased = clean_str(title_details['titlereleased'])
             category = clean_str(title_details['category'])
-            director = clean_str(title_details['director'])
+            creator = clean_str(title_details['director'])
             language = clean_str(title_details['language'])
-            line = f"\t\t('{title}', '{type}', '{rating}', '{titlereleased}', '{category}', '{director}', '{language}'){',' if index < (len(data) - 1) else ''}\n"
+            line = f"\t\t('{title}', '{type}', '{rating}', '{titlereleased}', '{category}', '{creator}', '{language}'){',' if index < (len(data) - 1) else ''}\n"
             file.write(line)
         if index == (len(data) - 1):
             file.write(';')
@@ -38,13 +38,13 @@ def store_data_in_db(data):
         rating = clean_str(title_details['rating'])
         titlereleased = clean_str(title_details['titlereleased'])
         category = clean_str(title_details['category'])
-        director = clean_str(title_details['director'])
+        creator = clean_str(title_details['director'])
         language = clean_str(title_details['language'])
 
         cursor.execute('''
-INSERT INTO title (title_name, type, rating, release_date, category, director, language) 
+INSERT INTO title (title_name, type, rating, release_date, category, creator, language) 
     VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING title_id
-''', (title, type, rating, titlereleased, category, director, language))
+''', (title, type, rating, titlereleased, category, creator, language))
         title_ids.append(cursor.fetchone()[0])
     
     print(f'Obtained {len(title_ids)} title IDs')

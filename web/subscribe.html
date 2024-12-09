@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watchlist</title>
+    <title>Subscriptions</title>
     <!-- Material Design Lite CSS -->
     <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
     <!-- Material Icons -->
@@ -36,14 +36,14 @@
             flex-direction: row;
             gap: 20px;
         }
-        #titles, #watchlist {
+        #packages, #subscriptions {
             flex: 1;
         }
-        #titles {
+        #packages {
             max-height: 600px;
             overflow-y: auto;
         }
-        #titleForm, #watchlistForm {
+        #packageForm, #subscriptionsForm {
             margin-bottom: 20px;
             display: flex;
             justify-content: flex-end;
@@ -92,31 +92,38 @@
     <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" onclick="returnToHomePage()">Home</button>
     <div class="container">
         <div id="main" class="mdl-card mdl-shadow--2dp">
-            <div id="titles">
-                <h1 class="mdl-card__title-text">Available Titles</h1>
-                <table id="titlesTable" class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
+            <div id="packages">
+                <h1 class="mdl-card__title-text">Available Packages</h1>
+                <table id="packagesTable" class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
                     <thead>
                         <tr>
-                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(0, 'titlesTable')">Title</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(0, 'packagesTable')">Service</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1, 'packagesTable')">Name</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(2, 'packagesTable')">Price</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(3, 'packagesTable')">Period (months)</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(4, 'packagesTable')">Has Ads?</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="titlesList">
+                    <tbody id="packagesList">
                     </tbody>
                 </table>
             </div>
-            <div id="watchlist">
-                <h1 class="mdl-card__title-text" id="dynamicTitle">Watchlist</h1>
-                <form id="watchlistForm" class="mdl-grid">
+            <div id="subscriptions">
+                <h1 class="mdl-card__title-text" id="dynamicTitle">Subscriptions</h1>
+                <form id="subscriptionsForm" class="mdl-grid">
                 </form>
-                <table id="watchlistTable" class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
+                <table id="subscriptionsTable" class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
                     <thead>
                         <tr>
                             <th style="width: 1.5em;"><input type="checkbox" id="selectAll" onclick="selectAllCheckbox(this)"></th>
-                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1, 'watchlistTable')">Title</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1, 'subscriptionsTable')">Service</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1, 'subscriptionsTable')">Package</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1, 'subscriptionsTable')">Price</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1, 'subscriptionsTable')">Period (months)</th>
                         </tr>
                     </thead>
-                    <tbody id="watchlistList">
+                    <tbody id="subscriptionsList">
                     </tbody>
                 </table>
                 <button class="delete-button" onclick="deleteSelected()">
@@ -144,88 +151,107 @@
             return urlParams.get('consumer_name');
         }
 
-        async function fetchTitles() {
-            const response = await fetch('http://localhost:8000/titles/');
-            const titles = await response.json();
-            const titlesList = document.getElementById('titlesList');
-            titlesList.innerHTML = '';
-            titles.forEach(title => {
-                const row = document.createElement('tr');
-                row.classList.add('title-row');
+        async function fetchPackages() {
+            const ssResponse = await fetch('http://localhost:8000/streamingservices/');
+            const streamingServices = await ssResponse.json();
+            let allPackages = [];
+            for (let i = 0; i < streamingServices.length; i++) {
+                let response = await fetch(`http://localhost:8000/packages/${streamingServices[i].service_id}`);
+                let packages = await response.json();
+                for (let j = 0; j < packages.length; j++) {
+                    packages[j].service_name = streamingServices[i].name;
+                }
+                allPackages = allPackages.concat(packages);
+            }
+            let packagesList = document.getElementById('packagesList');
+            packagesList.innerHTML = '';
+            allPackages.forEach(package => {
+                let row = document.createElement('tr');
+                row.classList.add(`package-row`);
                 row.innerHTML = `
-                    <td class="mdl-data-table__cell--non-numeric">${title.title_name}</td>
-                    <td><button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" onclick="addTitleToWatchlist('${title.title_id}')">Add</button></td>
+                    <td class="mdl-data-table__cell--non-numeric">${package.service_name}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${package.name}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${package.price}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${package.period}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${package.ad_supported}</td>
+                    <td><button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" onclick="addPackageToSubscriptions('${package.package_id}')">Add</button></td>
                 `;
-                titlesList.appendChild(row);
+                packagesList.appendChild(row);
             });
-            return titles;
+            return allPackages;
         }
 
-        async function fetchWatchlist() {
+        async function fetchSubscriptions() {
             const consumer_id = getConsumerIdFromUrl();
-            const response = await fetch(`http://localhost:8000/watchlists/${consumer_id}`);
-            const watchlist = await response.json();
-            const watchlistList = document.getElementById('watchlistList');
-            watchlistList.innerHTML = '';
+            const response = await fetch(`http://localhost:8000/subscriptions/${consumer_id}`);
+            const subscriptions = await response.json();
+            const subscriptionsList = document.getElementById('subscriptionsList');
+            subscriptionsList.innerHTML = '';
 
-            const titles = await fetchTitles();
+            const packages = await fetchPackages();
 
-            watchlist.forEach(item => {
-                let title_name = titles.find(title => title.title_id === item.title_id).title_name;
+            subscriptions.forEach(item => {
+                let service_name = packages.find(package => package.package_id === item.package_id).service_name;
+                let package_name = packages.find(package => package.package_id === item.package_id).name;
+                let price = packages.find(package => package.package_id === item.package_id).price;
+                let period = packages.find(package => package.package_id === item.package_id).period;
 
                 const row = document.createElement('tr');
-                row.classList.add('watchlist-row');
+                row.classList.add('subscriptions-row');
                 row.innerHTML = `
-                    <td style="width: 1.5em;"><input type="checkbox" class="watchlist-checkbox" value="${item.watchlist_item_id}"></td>
-                    <td class="mdl-data-table__cell--non-numeric">${title_name}</td>
+                    <td style="width: 1.5em;"><input type="checkbox" class="subscriptions-checkbox" value='{"consumer_id":"${consumer_id}", "package_id":"${item.package_id}"}'></td>
+                    <td class="mdl-data-table__cell--non-numeric">${service_name}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${package_name}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${price}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${period}</td>
                 `;
                 row.addEventListener('click', function(event) {
                     if (event.target.tagName !== 'INPUT') {
-                        const checkbox = this.querySelector('.watchlist-checkbox');
+                        const checkbox = this.querySelector('.subscriptions-checkbox');
                         checkbox.checked = !checkbox.checked;
                         this.classList.toggle('selected', checkbox.checked);
                     }
                 });
-                watchlistList.appendChild(row);
+                subscriptionsList.appendChild(row);
             });
         }
 
-        async function addTitleToWatchlist(titleId) {
+        async function addPackageToSubscriptions(packageId) {
             const consumerId = getConsumerIdFromUrl();
 
-            await fetch(`http://localhost:8000/watchlists/${consumerId}/items`, {
+            await fetch(`http://localhost:8000/subscriptions/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ title_id: titleId })
+                body: JSON.stringify({ consumer_id: consumerId, package_id: packageId })
             });
-            fetchWatchlist();
+            fetchSubscriptions();
         }
 
         async function deleteSelected() {
-            const selected = Array.from(document.querySelectorAll('.watchlist-checkbox:checked')).map(checkbox => checkbox.value);
+            const selected = Array.from(document.querySelectorAll('.subscriptions-checkbox:checked')).map(checkbox => checkbox.value);
             if (selected.length > 0) {
-                await fetch(`http://localhost:8000/watchlist_items/`, {
+                await fetch(`http://localhost:8000/subscriptions/`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ watchlist_item_ids: selected })
+                    body: JSON.stringify(selected.map(value => JSON.parse(value)))
                 });
-                fetchWatchlist();
+                fetchSubscriptions();
             }
         }
 
         function selectAllCheckbox(selectAll) {
-            const checkboxes = document.querySelectorAll('.watchlist-checkbox');
+            const checkboxes = document.querySelectorAll('.subscriptions-checkbox');
             checkboxes.forEach(checkbox => {
                 checkbox.checked = selectAll.checked;
                 checkbox.closest('tr').classList.toggle('selected', selectAll.checked);
             });
         }
 
-        document.getElementById('watchlistForm').addEventListener('submit', async (event) => {
+        document.getElementById('subscriptionsForm').addEventListener('submit', async (event) => {
             event.preventDefault();
         });
 
@@ -248,10 +274,10 @@
         }
 
         if (getConsumerNameFromUrl() != undefined) {
-            document.getElementById('dynamicTitle').innerText = 'Watchlist for ' + getConsumerNameFromUrl();
+            document.getElementById('dynamicTitle').innerText = 'Subscriptions for ' + getConsumerNameFromUrl();
         }
-        fetchTitles();
-        fetchWatchlist();
+        fetchPackages();
+        fetchSubscriptions();
     </script>
 </body>
 </html>

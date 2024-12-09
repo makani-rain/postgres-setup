@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Titles</title>
+    <title>Packages</title>
     <!-- Material Design Lite CSS -->
     <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
     <!-- Material Icons -->
@@ -36,12 +36,12 @@
             flex-direction: column;
             gap: 20px;
         }
-        #titles {
+        #packages {
             flex: 1;
             max-height: 600px;
             overflow-y: auto;
         }
-        #titleForm {
+        #packageForm {
             margin-bottom: 20px;
             display: flex;
             justify-content: flex-end;
@@ -90,61 +90,61 @@
     <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" onclick="returnToHomePage()">Home</button>
     <div class="container">
         <div id="main" class="mdl-card mdl-shadow--2dp">
-            <h1 class="mdl-card__title-text">Available Titles</h1>
-            <form id="titleForm" class="mdl-grid">
+            <h1 class="mdl-card__title-text" id="dynamicTitle">Available Packages</h1>
+            <form id="packageForm" class="mdl-grid">
                 <div class="mdl-cell mdl-cell--4-col">
                     <div class="mdl-textfield mdl-js-textfield">
-                        <input class="mdl-textfield__input" type="text" id="title_name" name="title_name" required>
-                        <label class="mdl-textfield__label" for="title_name">Title Name</label>
+                        <input class="mdl-textfield__input" type="text" id="package_name" name="package_name" required>
+                        <label class="mdl-textfield__label" for="package_name">Package Name</label>
                     </div>
                 </div>
                 <div class="mdl-cell mdl-cell--4-col">
                     <div class="mdl-textfield mdl-js-textfield">
-                        <input class="mdl-textfield__input" type="text" id="type" name="type">
-                        <label class="mdl-textfield__label" for="type">Type</label>
+                        <input class="mdl-textfield__input" type="text" id="price" name="price">
+                        <label class="mdl-textfield__label" for="price">Price</label>
                     </div>
                 </div>
                 <div class="mdl-cell mdl-cell--4-col">
                     <div class="mdl-textfield mdl-js-textfield">
-                        <input class="mdl-textfield__input" type="text" id="release_date" name="release_date">
-                        <label class="mdl-textfield__label" for="release_date">Release Date</label>
+                        <input class="mdl-textfield__input" type="text" id="period" name="period">
+                        <label class="mdl-textfield__label" for="period">Period</label>
                     </div>
                 </div>
                 <div class="mdl-cell mdl-cell--4-col">
                     <div class="mdl-textfield mdl-js-textfield">
-                        <input class="mdl-textfield__input" type="text" id="category" name="category">
-                        <label class="mdl-textfield__label" for="category">Category</label>
+                        <input class="mdl-textfield__input" type="text" id="ad_supported" name="ad_supported">
+                        <label class="mdl-textfield__label" for="ad_supported">Has Ads?</label>
                     </div>
                 </div>
                 <div class="mdl-cell mdl-cell--4-col">
                     <div class="mdl-textfield mdl-js-textfield">
-                        <input class="mdl-textfield__input" type="text" id="creator" name="creator">
-                        <label class="mdl-textfield__label" for="creator">Creator</label>
+                        <input class="mdl-textfield__input" type="text" id="deprecated" name="deprecated">
+                        <label class="mdl-textfield__label" for="deprecated">Deprecated?</label>
                     </div>
                 </div>
                 <div class="mdl-cell mdl-cell--12-col" style="display: flex; justify-content: flex-end;">
                     <button type="submit" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored">
-                        Add Title
+                        Add Package
                     </button>
                 </div>
             </form>
-            <div id="titles">
-                <table id="titlesTable" class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
+            <div id="packages">
+                <table id="packagesTable" class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
                     <thead>
                         <tr>
                             <th style="width: 1.5em;"><input type="checkbox" id="selectAll" onclick="selectAllCheckbox(this)"></th>
-                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1, 'titlesTable')">Title</th>
-                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(2, 'titlesTable')">Type</th>
-                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(3, 'titlesTable')">Release Date</th>
-                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(4, 'titlesTable')">Category</th>
-                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(5, 'titlesTable')">Creator</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1, 'packagesTable')">Name</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(2, 'packagesTable')">Price</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(3, 'packagesTable')">Period in months <sub>(monthly is 1)</sub></th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(4, 'packagesTable')">Has Ads?</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(5, 'packagesTable')">Deprecated?</th>
                         </tr>
                     </thead>
-                    <tbody id="titlesList">
+                    <tbody id="packagesList">
                     </tbody>
                 </table>
             </div>
-            <button class="delete-button" onclick="deleteSelectedTitles()">
+            <button class="delete-button" onclick="deleteSelectedPackages()">
                 Delete Selected
             </button>
         </div>
@@ -156,71 +156,84 @@
         function returnToHomePage() {
             window.location.href = `/`;
         }
+        
+        // Function to get the consumer_id from the query parameters
+        function getStreamingServiceIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('serviceId');
+        }
 
-        async function fetchTitles() {
-            const response = await fetch('http://localhost:8000/titles/');
-            const titles = await response.json();
-            const titlesList = document.getElementById('titlesList');
-            titlesList.innerHTML = '';
-            titles.forEach(title => {
+        function getStreamingServiceNameFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('serviceName');
+        }
+
+        async function fetchPackages() {
+            const service_id = getStreamingServiceIdFromUrl();
+            const response = await fetch(`http://localhost:8000/packages/${service_id}`);
+            const packages = await response.json();
+            const packagesList = document.getElementById('packagesList');
+            packagesList.innerHTML = '';
+            packages.forEach(package => {
                 const row = document.createElement('tr');
-                row.classList.add('title-row');
+                row.classList.add('package-row');
                 row.innerHTML = `
-                    <td style="width: 1.5em;"><input type="checkbox" class="title-checkbox" value="${title.title_id}"></td>
-                    <td class="mdl-data-table__cell--non-numeric">${title.title_name}</td>
-                    <td class="mdl-data-table__cell--non-numeric">${title.type}</td>
-                    <td class="mdl-data-table__cell--non-numeric">${title.release_date}</td>
-                    <td class="mdl-data-table__cell--non-numeric">${title.category}</td>
-                    <td class="mdl-data-table__cell--non-numeric">${title.creator}</td>
+                    <td style="width: 1.5em;"><input type="checkbox" class="package-checkbox" value="${package.package_id}"></td>
+                    <td class="mdl-data-table__cell--non-numeric">${package.name}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${package.price}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${package.period}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${package.ad_supported}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${package.deprecated}</td>
                 `;
                 row.addEventListener('click', function(event) {
                     if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'BUTTON') {
-                        const checkbox = this.querySelector('.title-checkbox');
+                        const checkbox = this.querySelector('.package-checkbox');
                         checkbox.checked = !checkbox.checked;
                         this.classList.toggle('selected', checkbox.checked);
                     }
                 });
-                titlesList.appendChild(row);
+                packagesList.appendChild(row);
             });
         }
 
-        async function addTitle(event) {
+        async function addPackage(event) {
+            const service_id = getStreamingServiceIdFromUrl();
             event.preventDefault();
-            const title_name = document.getElementById('title_name').value;
-            const type = document.getElementById('type').value;
-            const release_date = document.getElementById('release_date').value;
-            const category = document.getElementById('category').value;
-            const creator = document.getElementById('creator').value;
+            const name = document.getElementById('package_name').value;
+            const price = document.getElementById('price').value;
+            const period = document.getElementById('period').value;
+            const ad_supported = document.getElementById('ad_supported').value;
+            const deprecated = document.getElementById('deprecated').value;
 
-            const response = await fetch('http://localhost:8000/titles/', {
+            const response = await fetch(`http://localhost:8000/packages/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ title_name, type, release_date, category, creator }),
+                body: JSON.stringify({ service_id, name, price, period, ad_supported, deprecated }),
             });
 
             if (response.ok) {
-                fetchTitles();
+                fetchPackages();
             }
         }
 
-        async function deleteSelectedTitles() {
-            const selected = Array.from(document.querySelectorAll('.title-checkbox:checked')).map(checkbox => checkbox.value);
+        async function deleteSelectedPackages() {
+            const selected = Array.from(document.querySelectorAll('.package-checkbox:checked')).map(checkbox => checkbox.value);
             if (selected.length > 0) {
-                await fetch('http://localhost:8000/titles/', {
+                await fetch('http://localhost:8000/packages/', {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ title_ids: selected })
+                    body: JSON.stringify({ package_ids: selected })
                 });
-                fetchTitles();
+                fetchPackages();
             }
         }
 
         function selectAllCheckbox(selectAll) {
-            const checkboxes = document.querySelectorAll('.title-checkbox');
+            const checkboxes = document.querySelectorAll('.package-checkbox');
             checkboxes.forEach(checkbox => {
                 checkbox.checked = selectAll.checked;
                 checkbox.closest('tr').classList.toggle('selected', selectAll.checked);
@@ -245,9 +258,11 @@
             sortedRows.forEach(row => table.appendChild(row));
         }
 
-        document.getElementById('titleForm').addEventListener('submit', addTitle);
-        
-        fetchTitles();
+        document.getElementById('packageForm').addEventListener('submit', addPackage);
+        if (getStreamingServiceNameFromUrl() != undefined) {
+            document.getElementById('dynamicTitle').innerText = 'Available Packages for ' + getStreamingServiceNameFromUrl();
+        }
+        fetchPackages();
     </script>
 </body>
 </html>

@@ -5,8 +5,8 @@ CREATE TABLE title (
   type varchar(32),
   rating varchar(32),
   release_date varchar(32),
-  category varchar(128),
-  director varchar(128),
+  category text,
+  creator text,
   language varchar(64),
-  CONSTRAINT unique_title_release UNIQUE(title_name, type, rating, director, release_date, language)
+  CONSTRAINT unique_title_release UNIQUE(title_name, type, rating, creator, release_date, language)
 );

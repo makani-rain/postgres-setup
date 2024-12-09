@@ -6,7 +6,7 @@
 \i /docker-entrypoint-initdb.d/subscripts/streaming_service.sql;
 \i /docker-entrypoint-initdb.d/subscripts/streams.sql;
 \i /docker-entrypoint-initdb.d/subscripts/package.sql;
-\i /docker-entrypoint-initdb.d/subscripts/subscription.sql;
+\i /docker-entrypoint-initdb.d/subscripts/subscribes.sql;
 \echo === Populating tables ===
 \i /docker-entrypoint-initdb.d/subscripts/canned/consumer_canned.sql;
 \i /docker-entrypoint-initdb.d/subscripts/canned/title_canned.sql;
