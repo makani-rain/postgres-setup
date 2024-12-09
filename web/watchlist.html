@@ -17,7 +17,7 @@
         }
         .container {
             width: 100%;
-            height: 100vh;
+            height: 95vh;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -27,7 +27,7 @@
         }
         #main {
             width: 100%;
-            max-width: 90%;
+            max-width: 100vw;
             background: #fff;
             padding: 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
@@ -36,15 +36,13 @@
             flex-direction: row;
             gap: 20px;
         }
-        #titles, #watchlist {
+        #titles, #watchlist, #suggestedServices {
             flex: 1;
-        }
-        #titles {
-            max-height: 600px;
+            max-height: 95vh;
             overflow-y: auto;
         }
         #titleForm, #watchlistForm {
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             display: flex;
             justify-content: flex-end;
         }
@@ -53,7 +51,7 @@
             border-collapse: collapse;
         }
         th, td {
-            padding: 10px;
+            padding: 2px;
             text-align: left;
         }
         th {
@@ -64,10 +62,6 @@
             padding: 0;
             width: 1.5em;
             height: 1.5em;
-        }
-        .deleteIcon {
-            cursor: pointer;
-            color: red;
         }
         .delete-button {
             margin-top: 10px;
@@ -83,6 +77,20 @@
         .delete-button:hover {
             background-color: #ef9a9a;
         }
+        .suggest-button {
+            margin-top: 10px;
+            background-color: #d1ffcd;
+            color: #2fd37b;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            align-self: flex-end;
+        }
+        .suggest-button:hover {
+            background-color: #92d49e;
+        }
         .selected {
             background-color: #e0f7fa;
         }
@@ -94,6 +102,8 @@
         <div id="main" class="mdl-card mdl-shadow--2dp">
             <div id="titles">
                 <h1 class="mdl-card__title-text">Available Titles</h1>
+                <form id="titlesForm" class="mdl-grid">
+                </form>
                 <table id="titlesTable" class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
                     <thead>
                         <tr>
@@ -114,6 +124,7 @@
                         <tr>
                             <th style="width: 1.5em;"><input type="checkbox" id="selectAll" onclick="selectAllCheckbox(this)"></th>
                             <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1, 'watchlistTable')">Title</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1, 'watchlistTable')">Available On</th>
                         </tr>
                     </thead>
                     <tbody id="watchlistList">
@@ -122,6 +133,24 @@
                 <button class="delete-button" onclick="deleteSelected()">
                     Delete Selected
                 </button>
+                <button class="suggest-button" onclick="loadSuggestions()">
+                    Suggest Streaming Services
+                </button>
+            </div>
+            <div id="suggestedServices">
+                <h1 class="mdl-card__title-text">Suggested Service Combinations</h1>
+                <form id="suggestedServicesForm" class="mdl-grid">
+                </form>
+                <table id="suggestedServicesTable" class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
+                    <thead>
+                        <tr>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1, 'suggestedServicesTable')">Service</th>
+                            <th class="mdl-data-table__cell--non-numeric" onclick="sortTable(1, 'suggestedServicesTable')">#</th>
+                        </tr>
+                    </thead>
+                    <tbody id="suggestedServicesList">
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -167,17 +196,29 @@
             const watchlist = await response.json();
             const watchlistList = document.getElementById('watchlistList');
             watchlistList.innerHTML = '';
-
+            
             const titles = await fetchTitles();
+            
+            for (let i = 0; i < watchlist.length; i++) {
+                item = watchlist[i];
+                const consumer_id = getConsumerIdFromUrl();
 
-            watchlist.forEach(item => {
                 let title_name = titles.find(title => title.title_id === item.title_id).title_name;
+
+                const titleResponse = await fetch(`http://localhost:8000/streams/title/${item.title_id}`);
+                const titleAvailability = await titleResponse.json();
+
+                let services = [];
+                titleAvailability.forEach(streaming => {
+                    services.push(streaming.service_name);
+                });
 
                 const row = document.createElement('tr');
                 row.classList.add('watchlist-row');
                 row.innerHTML = `
                     <td style="width: 1.5em;"><input type="checkbox" class="watchlist-checkbox" value="${item.watchlist_item_id}"></td>
                     <td class="mdl-data-table__cell--non-numeric">${title_name}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${services.join(", ")}</td>
                 `;
                 row.addEventListener('click', function(event) {
                     if (event.target.tagName !== 'INPUT') {
@@ -187,7 +228,7 @@
                     }
                 });
                 watchlistList.appendChild(row);
-            });
+            }
         }
 
         async function addTitleToWatchlist(titleId) {
@@ -215,6 +256,29 @@
                 });
                 fetchWatchlist();
             }
+        }
+
+        async function loadSuggestions() {
+            const consumer_id = getConsumerIdFromUrl();
+            const watchlistResponse = await fetch(`http://localhost:8000/watchlists/id/${consumer_id}`);
+            const watchlist = await watchlistResponse.json();
+            console.log(`watchlist_id=${watchlist.watchlist_id}`)
+
+            const suggestionsResponse = await fetch(`http://localhost:8000/streamingservices/suggest/${watchlist.watchlist_id}`);
+            const suggestions = await suggestionsResponse.json();
+
+            console.log(suggestions)
+            suggestions.forEach(combo => {
+
+                const row = document.createElement('tr');
+                row.classList.add('suggested-services-row');
+                row.innerHTML = `
+                    <td class="mdl-data-table__cell--non-numeric">${combo.join(", ")}</td>
+                    <td class="mdl-data-table__cell--non-numeric">${combo.length}</td>
+                `;
+                suggestedServicesList.appendChild(row);
+            });
+
         }
 
         function selectAllCheckbox(selectAll) {

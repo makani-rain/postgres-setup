@@ -6,7 +6,7 @@ import json
 # URL of the API endpoint
 url = "https://streaming-availability.p.rapidapi.com/shows/search/filters"
 
-service = 'disney'
+service = 'paramount'
 
 api_key = os.getenv('RAPID_API_KEY')
 
@@ -14,7 +14,7 @@ api_key = os.getenv('RAPID_API_KEY')
 params = {
     "country": 'us',
     "series_granularity": 'show',
-    "order_direction": 'asc',
+    "order_direction": 'desc',
     "order_by": 'original_title',
     "output_language": 'en',
     "catalogs": service,
@@ -36,7 +36,7 @@ output_file = f"data{service}.json"
 def fetch_data(url, params, headers, output_file):
     all_data = []
     has_more = True
-    
+    count = 0
     while has_more:
         response = requests.get(url, params=params, headers=headers)
         
@@ -48,11 +48,18 @@ def fetch_data(url, params, headers, output_file):
             has_more = data["hasMore"]
             
             # Move to the next page
-            params["cursor"] = data["nextCursor"]
+            if has_more and 'nextCursor' in data:
+                params["cursor"] = data["nextCursor"]
         else:
             print(f"Failed to retrieve data: {response.status_code}")
             break
-    
+        count += 1
+        if count > 50:
+            input_resp = input("Count is greater than warning limit. Continue? N/n to stop.").lower()
+            if input_resp == 'n':
+                has_more = False
+            count = 0
+
     # Write all data to the output file
     with open(output_file, 'w', encoding='utf-8') as file:
         json.dump(all_data, file, ensure_ascii=False, indent=4)
@@ -60,5 +67,5 @@ def fetch_data(url, params, headers, output_file):
     print(f"Data successfully written to {output_file}")
 
 # Call the function to fetch data
-# fetch_data(url, params, headers, output_file)
+fetch_data(url, params, headers, output_file)
 

@@ -9,4 +9,3 @@
 \i /docker-entrypoint-initdb.d/subscripts/subscribes.sql;
 \echo === Populating tables ===
 \i /docker-entrypoint-initdb.d/subscripts/canned/consumer_canned.sql;
-\i /docker-entrypoint-initdb.d/subscripts/canned/title_canned.sql;

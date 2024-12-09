@@ -1,3 +1,4 @@
+from itertools import combinations
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, conlist
@@ -58,6 +59,10 @@ class Subscription(BaseModel):
     package_id: str
     renewal_date: Optional[str] = None
 
+class Watchlist(BaseModel):
+    watchlist_id: str
+    consumer_id: str
+
 class WatchlistItemCreate(BaseModel):
     title_id: str
 
@@ -114,6 +119,50 @@ def delete_streaming_services(streaming_services_to_delete: StreamingServicesToD
         raise HTTPException(status_code=404, detail="StreamingServices not found")
     return [service_id[0] for service_id in deleted]
 
+
+# Function to check if a combination covers all services at least once
+def covers_all_titles(title_services, combo):
+    covered_titles = set()
+    for title_id, details in title_services.items():
+        title_services_set = set(service[0] for service in details["services"])
+        if title_services_set.intersection(combo):
+            covered_titles.add(title_id)
+    return len(covered_titles) == len(title_services)
+
+# Get Suggested Streaming Services Endpoint
+@app.get("/streamingservices/suggest/{watchlist_id}")
+def suggest_streaming_services(watchlist_id: str, cursor = Depends(get_cursor)):
+    cursor.execute('''
+select s.title_id, t.title_name, ss.service_id, ss.name
+	from streaming_service ss 
+	join streams s on ss.service_id = s.service_id 
+	join title t on t.title_id = s.title_id
+	join watchlist_item wi on s.title_id = wi.title_id
+	where wi.watchlist_id = %s
+	
+                   ''', (watchlist_id,))
+    pairings = cursor.fetchall()
+    title_stream_pairs = [{"title_id": title_id, "title_name": title_name, "service_id": service_id, "service_name": service_name} for title_id, title_name, service_id, service_name in pairings]
+    title_id_dict = {pair['title_id']: {'title_name': pair['title_name'], 'services': []} for pair in title_stream_pairs}
+    for pair in title_stream_pairs:
+        title_id_dict[pair['title_id']]['services'].append((pair['service_name'], pair['service_id']))
+
+    # Extract all unique services
+    all_services = set()
+    for details in title_id_dict.values():
+        for service_name, _ in details["services"]:
+            all_services.add(service_name)
+
+    # Generate all combinations of services
+    all_combinations = []
+    for r in range(1, len(all_services) + 1):
+        for combo in combinations(all_services, r):
+            if covers_all_titles(title_id_dict, combo):
+                all_combinations.append(set(combo))
+
+    sorted_combinations = sorted(all_combinations, key=len)
+    return sorted_combinations
+
 ###################################
 
 # Get Packages for a Streaming Service Endpoint
@@ -152,6 +201,22 @@ def delete_packages(packages_to_delete: PackagesToDelete, cursor = Depends(get_c
     return [package_id[0] for package_id in deleted]
 
 ###################################
+
+# Get Streaming Title Availability for a Title ID Endpoint
+@app.get("/streams/title/{title_id}")
+def read_streams(title_id: str, cursor = Depends(get_cursor)):
+    cursor.execute("""
+        SELECT ss.name, s.service_id, s.title_id, s.arrival_date, s.leaving_date, t.title_name
+        FROM streams s
+            JOIN title t ON s.title_id = t.title_id
+            JOIN streaming_service ss ON s.service_id = ss.service_id       
+        WHERE s.title_id = %s
+    """, (title_id,))
+    streaming_titles = cursor.fetchall()
+    return [
+        {"service_name": s_name, "service_id": s_id, "title_id": t_id, "arrival_date": arr_date, "leaving_date": leave_date, "title_name": title_name}
+        for s_name, s_id, t_id, arr_date, leave_date, title_name in streaming_titles
+    ]
 
 # Get Streaming Titles for a Service Endpoint
 @app.get("/streams/{service_id}", response_model=List[StreamingTitle])
@@ -253,6 +318,17 @@ def delete_subscriptions(items_to_delete: List[Subscription], cursor = Depends(g
     return [{'consumer_id':del_subscription[0], 'package_id':del_subscription[1]} for del_subscription in deleted]
 
 ###################################
+
+# Get Watchlist ID for a Consumer Endpoint
+@app.get("/watchlists/id/{consumer_id}", response_model=Watchlist)
+def read_watchlist(consumer_id: str, cursor = Depends(get_cursor)):
+    cursor.execute("""
+        SELECT w.watchlist_id
+        FROM watchlist w
+        WHERE w.consumer_id = %s
+    """, (consumer_id,))
+    watchlist_id = cursor.fetchone()[0]
+    return {"watchlist_id": watchlist_id, "consumer_id": consumer_id}
 
 # Get Watchlist Items for a Consumer Endpoint
 @app.get("/watchlists/{consumer_id}", response_model=List[WatchlistItem])
