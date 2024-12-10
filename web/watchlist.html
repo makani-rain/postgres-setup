@@ -266,7 +266,9 @@
 
             const suggestionsResponse = await fetch(`http://localhost:8000/streamingservices/suggest/${watchlist.watchlist_id}`);
             const suggestions = await suggestionsResponse.json();
-
+            
+            const suggestedServicesList = document.getElementById('suggestedServicesList');
+            suggestedServicesList.innerHTML = '';
             console.log(suggestions)
             suggestions.forEach(combo => {
 
