@@ -204,7 +204,7 @@ def delete_packages(packages_to_delete: PackagesToDelete, cursor = Depends(get_c
 
 # Get Streaming Title Availability for a Title ID Endpoint
 @app.get("/streams/title/{title_id}")
-def read_streams(title_id: str, cursor = Depends(get_cursor)):
+def read_streams_title(title_id: str, cursor = Depends(get_cursor)):
     cursor.execute("""
         SELECT ss.name, s.service_id, s.title_id, s.arrival_date, s.leaving_date, t.title_name
         FROM streams s
@@ -321,7 +321,7 @@ def delete_subscriptions(items_to_delete: List[Subscription], cursor = Depends(g
 
 # Get Watchlist ID for a Consumer Endpoint
 @app.get("/watchlists/id/{consumer_id}", response_model=Watchlist)
-def read_watchlist(consumer_id: str, cursor = Depends(get_cursor)):
+def read_watchlist_id(consumer_id: str, cursor = Depends(get_cursor)):
     cursor.execute("""
         SELECT w.watchlist_id
         FROM watchlist w
@@ -392,11 +392,7 @@ def create_title(title: TitleCreate, cursor = Depends(get_cursor)):
 # Get Title Details
 @app.get("/titles/{title_id}", response_model=Title)
 def get_title_details(title_id: str, cursor = Depends(get_cursor)):
-    cursor.execute("""
-        SELECT *
-        FROM title
-        WHERE title_id = %s
-    """, (title_id,))
+    cursor.execute("SELECT * FROM title WHERE title_id = %s", (title_id,))
     title = cursor.fetchone()[0]
     return {"title_id": title_id, **title.model_dump()}
 
