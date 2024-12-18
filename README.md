@@ -10,6 +10,12 @@ To regenerate the database server with a fresh initialization of the tables and 
 To restart PostgreSQL server without rewriting the database:
 `docker compose down`
 
+To create Python virtual environment:
+`python -m venv venv`
+
+To activate Python virtual environment (Windows):
+`./venv/Scripts/Activate.ps1`
+
 To install python libraries:
 `pip install -r requirements.txt`
 
